@@ -1,39 +1,87 @@
-import './App.css';
-import { React } from 'react'
-import { BrowserRouter, Route, Switch } from 'react-router-dom'
-import { AuthContextProvider } from './auth';
-import { GlobalStoreContextProvider } from './store'
+import React from "react";
 import {
-    AppBanner,
-    HomeWrapper,
-    LoginScreen,
-    RegisterScreen,
-    Statusbar,
-    WorkspaceScreen
-} from './components'
-/*
-  This is the entry-point for our application. Notice that we
-  inject our store into all the components in our application.
-  
-  @author McKilla Gorilla
-*/
-const App = () => {   
-    return (
-        <BrowserRouter>
-            <AuthContextProvider>
-                <GlobalStoreContextProvider>              
-                    <AppBanner />
-                    <Switch>
-                        <Route path="/" exact component={HomeWrapper} />
-                        <Route path="/login/" exact component={LoginScreen} />
-                        <Route path="/register/" exact component={RegisterScreen} />
-                        <Route path="/playlist/:id" exact component={WorkspaceScreen} />
-                    </Switch>
-                    <Statusbar />
-                </GlobalStoreContextProvider>
-            </AuthContextProvider>
-        </BrowserRouter>
-    )
+  BrowserRouter as Router,
+  Routes,
+  Route,
+  Navigate,
+} from "react-router-dom";
+import { AuthProvider, useAuth } from "../contexts/AuthContext";
+import TitleBar from "./components/TitleBar";
+import WelcomeScreen from "./components/WelcomeScreen";
+import Login from "./components/Login";
+import Register from "./components/Register";
+import EditAccount from "./components/EditAccount";
+import PlaylistsScreen from "./components/PlaylistsScreen";
+import SongsScreen from "./components/SongsScreen";
+import "App.css";
+
+const PrivateRoute = ({ children }) => {
+  const { isAuthenticated, loading } = useAuth();
+
+  if (loading) {
+    return <div className="loading">Loading...</div>;
+  }
+
+  return isAuthenticated ? children : <Navigate to="/login" />;
+};
+
+const GuestRoute = ({ children }) => {
+  const { isAuthenticated, isGuest, loading } = useAuth();
+
+  if (loading) {
+    return <div className="loading">Loading...</div>;
+  }
+
+  return isAuthenticated || isGuest ? children : <Navigate to="/" />;
+};
+
+function AppContent() {
+  return (
+    <div className="app">
+      <TitleBar />
+      <div className="main-content">
+        <Routes>
+          <Route path="/" element={<WelcomeScreen />} />
+          <Route path="/login" element={<Login />} />
+          <Route path="/register" element={<Register />} />
+          <Route
+            path="/edit-account"
+            element={
+              <PrivateRoute>
+                <EditAccount />
+              </PrivateRoute>
+            }
+          />
+          <Route
+            path="/playlists"
+            element={
+              <GuestRoute>
+                <PlaylistsScreen />
+              </GuestRoute>
+            }
+          />
+          <Route
+            path="/songs"
+            element={
+              <GuestRoute>
+                <SongsScreen />
+              </GuestRoute>
+            }
+          />
+        </Routes>
+      </div>
+    </div>
+  );
 }
 
-export default App
+function App() {
+  return (
+    <Router>
+      <AuthProvider>
+        <AppContent />
+      </AuthProvider>
+    </Router>
+  );
+}
+
+export default App;
