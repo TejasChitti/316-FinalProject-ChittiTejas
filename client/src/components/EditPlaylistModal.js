@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { playlistsAPI } from "../services/api";
+import { playlistsAPI } from "../auth/requests/index";
 
 const EditPlaylistModal = ({ playlist, onClose }) => {
   const navigate = useNavigate();

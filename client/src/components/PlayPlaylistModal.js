@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import YouTube from "react-youtube";
-import { playlistsAPI } from "../services/api";
+import { playlistsAPI } from "../auth/requests/index";
 
 const PlayPlaylistModal = ({ playlist, onClose }) => {
   const [currentIndex, setCurrentIndex] = useState(0);

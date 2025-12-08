@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
-import { useAuth } from "../contexts/AuthContext";
-import { playlistsAPI } from "../services/api";
+import { useAuth } from "../auth/index";
+import { playlistsAPI } from "../auth/requests/index";
 import EditPlaylistModal from "./EditPlaylistModal";
 import PlayPlaylistModal from "./PlayPlaylistModal";
 import DeleteConfirmModal from "./DeleteConfirmModal";
@@ -185,12 +185,6 @@ const PlaylistsScreen = () => {
             Clear
           </button>
         </div>
-
-        {isAuthenticated && (
-          <button className="new-playlist-btn" onClick={handleCreatePlaylist}>
-            ➕ New Playlist
-          </button>
-        )}
       </div>
 
       <div className="results-panel">
@@ -283,6 +277,11 @@ const PlaylistsScreen = () => {
               </div>
             ))}
           </div>
+        )}
+        {isAuthenticated && (
+          <button className="new-playlist-btn" onClick={handleCreatePlaylist}>
+            ➕ New Playlist
+          </button>
         )}
       </div>
 

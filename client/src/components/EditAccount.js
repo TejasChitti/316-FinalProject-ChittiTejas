@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { useAuth } from "../contexts/AuthContext";
+import { useAuth } from "../auth/index";
 
 const EditAccount = () => {
   const navigate = useNavigate();
@@ -84,12 +84,14 @@ const EditAccount = () => {
 
   return (
     <div className="auth-screen">
-      <div className="auth-icon">🔒</div>
+      <div className="auth-icon">
+        <img src="/lock.png" />
+      </div>
       <h2 className="auth-title">Edit Account</h2>
 
       {errors.general && <div className="error">{errors.general}</div>}
 
-      <form onSubmit={handleSubmit}>
+      <form className="form" onSubmit={handleSubmit}>
         <div className="avatar-selector">
           <img
             src={formData.avatarImage}
@@ -101,81 +103,82 @@ const EditAccount = () => {
             className="avatar-button-small"
             onClick={handleAvatarSelect}
           >
-            Select Avatar
+            Select
           </button>
         </div>
+        <div>
+          <div className="form-group">
+            <input
+              type="text"
+              name="userName"
+              className={`form-input ${errors.userName ? "error" : ""}`}
+              placeholder="User Name"
+              value={formData.userName}
+              onChange={handleChange}
+              required
+            />
+            {errors.userName && (
+              <div className="error-message">{errors.userName}</div>
+            )}
+          </div>
 
-        <div className="form-group">
-          <input
-            type="text"
-            name="userName"
-            className={`form-input ${errors.userName ? "error" : ""}`}
-            placeholder="User Name"
-            value={formData.userName}
-            onChange={handleChange}
-            required
-          />
-          {errors.userName && (
-            <div className="error-message">{errors.userName}</div>
-          )}
-        </div>
+          <div className="form-group">
+            <input
+              type="text"
+              className="form-input"
+              placeholder="Email"
+              value={user?.email}
+              disabled
+              style={{ background: "#f0f0f0", cursor: "not-allowed" }}
+            />
+          </div>
 
-        <div className="form-group">
-          <input
-            type="text"
-            className="form-input"
-            placeholder="Email"
-            value={user?.email}
-            disabled
-            style={{ background: "#f0f0f0", cursor: "not-allowed" }}
-          />
-        </div>
+          <div className="form-group">
+            <input
+              type="password"
+              name="password"
+              className={`form-input ${errors.password ? "error" : ""}`}
+              placeholder="New Password (leave blank to keep current)"
+              value={formData.password}
+              onChange={handleChange}
+            />
+            {errors.password && (
+              <div className="error-message">{errors.password}</div>
+            )}
+          </div>
 
-        <div className="form-group">
-          <input
-            type="password"
-            name="password"
-            className={`form-input ${errors.password ? "error" : ""}`}
-            placeholder="New Password (leave blank to keep current)"
-            value={formData.password}
-            onChange={handleChange}
-          />
-          {errors.password && (
-            <div className="error-message">{errors.password}</div>
-          )}
-        </div>
+          <div className="form-group">
+            <input
+              type="password"
+              name="passwordConfirm"
+              className={`form-input ${errors.passwordConfirm ? "error" : ""}`}
+              placeholder="Confirm New Password"
+              value={formData.passwordConfirm}
+              onChange={handleChange}
+            />
+            {errors.passwordConfirm && (
+              <div className="error-message">{errors.passwordConfirm}</div>
+            )}
+          </div>
 
-        <div className="form-group">
-          <input
-            type="password"
-            name="passwordConfirm"
-            className={`form-input ${errors.passwordConfirm ? "error" : ""}`}
-            placeholder="Confirm New Password"
-            value={formData.passwordConfirm}
-            onChange={handleChange}
-          />
-          {errors.passwordConfirm && (
-            <div className="error-message">{errors.passwordConfirm}</div>
-          )}
-        </div>
-
-        <div style={{ display: "flex", gap: "10px" }}>
-          <button
-            type="submit"
-            className="btn btn-success"
-            style={{ flex: 1 }}
-            disabled={!isFormValid || loading}
-          >
-            {loading ? "Updating..." : "Complete"}
-          </button>
-          <button
-            type="button"
-            className="btn btn-secondary"
-            style={{ flex: 1 }}
-            onClick={() => navigate("/playlists")}
-          >
-            Cancel
-          </button>
+          <div style={{ display: "flex", gap: "10px" }}>
+            <button
+              type="submit"
+              className="btn btn-secondary"
+              style={{ flex: 1 }}
+              disabled={!isFormValid || loading}
+            >
+              {loading ? "Updating..." : "Complete"}
+            </button>
+            <button
+              type="button"
+              className="btn btn-secondary"
+              style={{ flex: 1 }}
+              onClick={() => navigate("/playlists")}
+            >
+              Cancel
+            </button>
+          </div>
         </div>
       </form>
 

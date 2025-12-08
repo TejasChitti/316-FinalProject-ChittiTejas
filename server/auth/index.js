@@ -1,57 +1,45 @@
-const jwt = require("jsonwebtoken")
+const jwt = require("jsonwebtoken");
+const User = require("../models/user-model");
 
-function authManager() {
-    verify = (req, res, next) => {
-        console.log("req: " + req);
-        console.log("next: " + next);
-        console.log("Who called verify?");
-        try {
-            const token = req.cookies.token;
-            if (!token) {
-                return res.status(401).json({
-                    loggedIn: false,
-                    user: null,
-                    errorMessage: "Unauthorized"
-                })
-            }
+const auth = async (req, res, next) => {
+  try {
+    const token = req.header("Authorization")?.replace("Bearer ", "");
 
-            const verified = jwt.verify(token, process.env.JWT_SECRET)
-            console.log("verified.userId: " + verified.userId);
-            req.userId = verified.userId;
-
-            next();
-        } catch (err) {
-            console.error(err);
-            return res.status(401).json({
-                loggedIn: false,
-                user: null,
-                errorMessage: "Unauthorized"
-            });
-        }
+    if (!token) {
+      throw new Error();
     }
 
-    verifyUser = (req) => {
-        try {
-            const token = req.cookies.token;
-            if (!token) {
-                return null;
-            }
+    const decoded = jwt.verify(token, process.env.JWT_SECRET);
+    const user = await User.findById(decoded.userId);
 
-            const decodedToken = jwt.verify(token, process.env.JWT_SECRET);
-            return decodedToken.userId;
-        } catch (err) {
-            return null;
-        }
+    if (!user) {
+      throw new Error();
     }
 
-    signToken = (userId) => {
-        return jwt.sign({
-            userId: userId
-        }, process.env.JWT_SECRET);
+    req.user = user;
+    req.token = token;
+    next();
+  } catch (error) {
+    res.status(401).json({ error: "Please authenticate" });
+  }
+};
+
+const optionalAuth = async (req, res, next) => {
+  try {
+    const token = req.header("Authorization")?.replace("Bearer ", "");
+
+    if (token) {
+      const decoded = jwt.verify(token, process.env.JWT_SECRET);
+      const user = await User.findById(decoded.userId);
+
+      if (user) {
+        req.user = user;
+      }
     }
+    next();
+  } catch (error) {
+    next();
+  }
+};
 
-    return this;
-}
-
-const auth = authManager();
-module.exports = auth;
+module.exports = { auth, optionalAuth };

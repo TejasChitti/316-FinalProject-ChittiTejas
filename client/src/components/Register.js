@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { useAuth } from "../contexts/AuthContext";
+import { useAuth } from "../auth/index";
 
 const Register = () => {
   const navigate = useNavigate();
@@ -115,12 +115,14 @@ const Register = () => {
 
   return (
     <div className="auth-screen">
-      <div className="auth-icon">🔒</div>
+      <div className="auth-icon">
+        <img src="/lock.png" />
+      </div>
       <h2 className="auth-title">Create Account</h2>
 
       {errors.general && <div className="error">{errors.general}</div>}
 
-      <form onSubmit={handleSubmit}>
+      <form className="form" onSubmit={handleSubmit}>
         <div className="avatar-selector">
           {formData.avatarImage ? (
             <img
@@ -146,79 +148,82 @@ const Register = () => {
             className="avatar-button-small"
             onClick={handleAvatarSelect}
           >
-            Select Avatar
+            Select
           </button>
           {errors.avatarImage && (
             <div className="error-message">{errors.avatarImage}</div>
           )}
         </div>
+        <div>
+          <div className="form-group">
+            <input
+              type="text"
+              name="userName"
+              className={`form-input ${errors.userName ? "error" : ""}`}
+              placeholder="User Name"
+              value={formData.userName}
+              onChange={handleChange}
+              required
+            />
+            {errors.userName && (
+              <div className="error-message">{errors.userName}</div>
+            )}
+          </div>
 
-        <div className="form-group">
-          <input
-            type="text"
-            name="userName"
-            className={`form-input ${errors.userName ? "error" : ""}`}
-            placeholder="User Name"
-            value={formData.userName}
-            onChange={handleChange}
-            required
-          />
-          {errors.userName && (
-            <div className="error-message">{errors.userName}</div>
-          )}
+          <div className="form-group">
+            <input
+              type="email"
+              name="email"
+              className={`form-input ${errors.email ? "error" : ""}`}
+              placeholder="Email"
+              value={formData.email}
+              onChange={handleChange}
+              required
+            />
+            {errors.email && (
+              <div className="error-message">{errors.email}</div>
+            )}
+          </div>
+
+          <div className="form-group">
+            <input
+              type="password"
+              name="password"
+              className={`form-input ${errors.password ? "error" : ""}`}
+              placeholder="Password"
+              value={formData.password}
+              onChange={handleChange}
+              required
+            />
+            {errors.password && (
+              <div className="error-message">{errors.password}</div>
+            )}
+          </div>
+
+          <div className="form-group">
+            <input
+              type="password"
+              name="passwordConfirm"
+              className={`form-input ${errors.passwordConfirm ? "error" : ""}`}
+              placeholder="Password Confirm"
+              value={formData.passwordConfirm}
+              onChange={handleChange}
+              required
+            />
+            {errors.passwordConfirm && (
+              <div className="error-message">{errors.passwordConfirm}</div>
+            )}
+          </div>
+
+          <button
+            type="submit"
+            className="btn btn-primary"
+            style={{ width: "100%" }}
+            disabled={!isFormValid || loading}
+          >
+            {loading ? "Creating Account..." : "Create Account"}
+          </button>
         </div>
-
-        <div className="form-group">
-          <input
-            type="email"
-            name="email"
-            className={`form-input ${errors.email ? "error" : ""}`}
-            placeholder="Email"
-            value={formData.email}
-            onChange={handleChange}
-            required
-          />
-          {errors.email && <div className="error-message">{errors.email}</div>}
-        </div>
-
-        <div className="form-group">
-          <input
-            type="password"
-            name="password"
-            className={`form-input ${errors.password ? "error" : ""}`}
-            placeholder="Password"
-            value={formData.password}
-            onChange={handleChange}
-            required
-          />
-          {errors.password && (
-            <div className="error-message">{errors.password}</div>
-          )}
-        </div>
-
-        <div className="form-group">
-          <input
-            type="password"
-            name="passwordConfirm"
-            className={`form-input ${errors.passwordConfirm ? "error" : ""}`}
-            placeholder="Password Confirm"
-            value={formData.passwordConfirm}
-            onChange={handleChange}
-            required
-          />
-          {errors.passwordConfirm && (
-            <div className="error-message">{errors.passwordConfirm}</div>
-          )}
-        </div>
-
-        <button
-          type="submit"
-          className="btn btn-primary"
-          style={{ width: "100%" }}
-          disabled={!isFormValid || loading}
-        >
-          {loading ? "Creating Account..." : "Create Account"}
-        </button>
       </form>
 
       <div className="form-link" onClick={() => navigate("/login")}>

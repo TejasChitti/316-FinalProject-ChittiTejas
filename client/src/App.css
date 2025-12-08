@@ -4,13 +4,23 @@
   box-sizing: border-box;
 }
 
+#root {
+  background-color: #ffffe4;
+  position: absolute;
+  width: 70%;
+  margin-left: 5%;
+  left: 10%;
+  height: 90%;
+  top: 10%;
+  border: solid 1px black;
+}
+
 body {
-  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Roboto", "Oxygen",
-    "Ubuntu", "Cantarell", "Fira Sans", "Droid Sans", "Helvetica Neue",
-    sans-serif;
+  font-family: sans-serif;
+  background-color: #ffe4fe;
+  font-weight: 500;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
-  background: linear-gradient(135deg, #ffc0cb 0%, #e6b3ff 100%);
   min-height: 100vh;
 }
 
@@ -65,7 +75,7 @@ body {
 }
 
 .nav-button {
-  background: rgba(255, 255, 255, 0.2);
+  background: #1e1e1e;
   color: white;
   border: none;
   padding: 8px 20px;
@@ -77,13 +87,15 @@ body {
 
 .nav-button:hover,
 .nav-button.active {
-  background: rgba(255, 255, 255, 0.3);
+  background: #3a64c4;
 }
 
 .title-bar-center {
+  font-family: Subtitle/Font Family;
   color: white;
   font-size: 24px;
   font-weight: bold;
+  margin-right: 300px;
 }
 
 .account-menu {
@@ -91,8 +103,9 @@ body {
 }
 
 .avatar-button {
-  width: 45px;
-  height: 45px;
+  background-color: white;
+  width: 35px;
+  height: 35px;
   border-radius: 50%;
   border: 2px solid white;
   cursor: pointer;
@@ -147,7 +160,6 @@ body {
 /* Main Content */
 .main-content {
   flex: 1;
-  padding: 30px;
   max-width: 1400px;
   margin: 0 auto;
   width: 100%;
@@ -155,36 +167,38 @@ body {
 
 /* Welcome Screen */
 .welcome-screen {
-  background: linear-gradient(135deg, #fffacd 0%, #fffacd 100%);
+  background-color: #ffffe4;
   border-radius: 10px;
   padding: 80px 40px;
+  padding-top: 0px;
   text-align: center;
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
   max-width: 600px;
   margin: 80px auto;
+  margin-top: 49px;
 }
 
-.welcome-logo {
-  font-size: 80px;
+.welcome-image {
+  width: 250px;
   margin-bottom: 20px;
 }
 
 .welcome-title {
   font-size: 48px;
   color: #333;
-  margin-bottom: 60px;
+  margin-bottom: 20px;
 }
 
 .welcome-buttons {
   display: flex;
-  flex-direction: column;
-  gap: 15px;
-  max-width: 300px;
-  margin: 0 auto;
+  flex-direction: row;
+  gap: 30px;
+  margin: auto;
+  justify-content: space-evenly;
 }
 
 .btn {
-  padding: 12px 24px;
+  flex: 1;
+  padding: 8px 10px;
   border: none;
   border-radius: 5px;
   cursor: pointer;
@@ -203,7 +217,7 @@ body {
 }
 
 .btn-secondary {
-  background: #666;
+  background: #333;
   color: white;
 }
 
@@ -245,12 +259,12 @@ body {
 
 /* Auth Forms */
 .auth-screen {
-  background: linear-gradient(135deg, #fffacd 0%, #fffacd 100%);
+  background: #ffffe4;
   border-radius: 10px;
   padding: 40px;
   max-width: 500px;
-  margin: 60px auto;
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+  margin: 0px auto;
+  padding-bottom: 10px;
 }
 
 .auth-icon {
@@ -266,6 +280,11 @@ body {
   margin-bottom: 30px;
 }
 
+.form {
+  display: flex;
+  gap: 8px;
+}
+
 .avatar-selector {
   display: flex;
   flex-direction: column;
@@ -274,8 +293,8 @@ body {
 }
 
 .avatar-preview {
-  width: 80px;
-  height: 80px;
+  width: 45px;
+  height: 45px;
   border-radius: 50%;
   object-fit: cover;
   margin-bottom: 10px;
@@ -292,8 +311,22 @@ body {
   font-size: 14px;
 }
 
-.form-group {
+.form-group input {
+  background-color: #e6e0e9;
+  display: flex;
+  flex-direction: column;
   margin-bottom: 20px;
+  width: 350px;
+  height: 50px;
+}
+
+.cancel-button {
+  width: 40px;
+}
+
+.sign-in-form {
+  padding-left: 45px;
+  width: 400px;
 }
 
 .form-input {
@@ -344,8 +377,9 @@ body {
 .playlists-screen {
   display: grid;
   grid-template-columns: 400px 1fr;
-  gap: 30px;
+  gap: 10p / x;
   min-height: 600px;
+  background-color: #fffacd;
 }
 
 .search-panel {
@@ -380,9 +414,9 @@ body {
 
 .results-panel {
   background: #fffacd;
+  border-left: solid 2px lightgray;
   padding: 30px;
-  border-radius: 10px;
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+  padding-left: 5px;
 }
 
 .results-header {

@@ -1,23 +1,56 @@
-const mongoose = require('mongoose')
-const Schema = mongoose.Schema
-/*
-    This is where we specify the format of the data we're going to put into
-    the database.
-    
-    @author McKilla Gorilla
-*/
-const playlistSchema = new Schema(
-    {
-        name: { type: String, required: true },
-        ownerEmail: { type: String, required: true },
-        songs: { type: [{
-            title: String,
-            artist: String,
-            year: Number,
-            youTubeId: String
-        }], required: true }
-    },
-    { timestamps: true },
-)
+const mongoose = require("mongoose");
 
-module.exports = mongoose.model('Playlist', playlistSchema)
+const playlistSchema = new mongoose.Schema(
+  {
+    name: {
+      type: String,
+      required: true,
+      trim: true,
+    },
+    owner: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "User",
+      required: true,
+    },
+    songs: [
+      {
+        song: {
+          type: mongoose.Schema.Types.ObjectId,
+          ref: "Song",
+        },
+        order: {
+          type: Number,
+          required: true,
+        },
+      },
+    ],
+    listeners: [
+      {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: "User",
+      },
+    ],
+    listenerCount: {
+      type: Number,
+      default: 0,
+    },
+    lastAccessed: {
+      type: Date,
+      default: Date.now,
+    },
+  },
+  {
+    timestamps: true,
+  }
+);
+
+// Compound index to ensure unique playlist names per user
+playlistSchema.index({ name: 1, owner: 1 }, { unique: true });
+
+// Update lastAccessed timestamp
+playlistSchema.methods.updateAccess = function () {
+  this.lastAccessed = new Date();
+  return this.save();
+};
+
+module.exports = mongoose.model("Playlist", playlistSchema);

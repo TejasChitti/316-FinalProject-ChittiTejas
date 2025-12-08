@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { useAuth } from "../contexts/AuthContext";
+import { useAuth } from "../auth/index";
 
 const Login = () => {
   const navigate = useNavigate();
@@ -46,12 +46,14 @@ const Login = () => {
 
   return (
     <div className="auth-screen">
-      <div className="auth-icon">🔒</div>
+      <div className="auth-icon">
+        <img src="/lock.png" />
+      </div>
       <h2 className="auth-title">Sign In</h2>
 
       {errors.general && <div className="error">{errors.general}</div>}
 
-      <form onSubmit={handleSubmit}>
+      <form className="sign-in-form" onSubmit={handleSubmit}>
         <div className="form-group">
           <input
             type="email"

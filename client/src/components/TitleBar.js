@@ -1,12 +1,12 @@
-import React from "react";
+import React, { useState } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
-import { useAuth } from "../contexts/AuthContext";
+import { useAuth } from "../auth/index";
 
 const TitleBar = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const { user, isAuthenticated, isGuest, logout } = useAuth();
-  const { showDropdown, setShowDropdown } = useState(false);
+  const [showDropdown, setShowDropdown] = useState(false);
 
   const handleHomeClick = () => {
     navigate("/");
@@ -42,6 +42,7 @@ const TitleBar = () => {
     }
   };
 
+  // Hide title bar on welcome screen if not authenticated
   if (location.pathname === "/" && !isAuthenticated && !isGuest) {
     return null;
   }
@@ -80,7 +81,7 @@ const TitleBar = () => {
         {isAuthenticated ? (
           <>
             <img
-              src={user.avatarImage}
+              src="/Avatar.png"
               alt="Avatar"
               className="avatar-button"
               onClick={handleAvatarClick}

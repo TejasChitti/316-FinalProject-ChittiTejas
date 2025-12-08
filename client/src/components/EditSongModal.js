@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { songsAPI } from "../services/api";
+import { songsAPI } from "../auth/requests/index";
 
 const EditSongModal = ({ song, onClose }) => {
   const [formData, setFormData] = useState({

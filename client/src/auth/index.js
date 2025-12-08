@@ -1,165 +1,79 @@
-import React, { createContext, useEffect, useState } from "react";
-import { useHistory } from 'react-router-dom'
-import authRequestSender from './requests'
+import React, { createContext, useState, useContext, useEffect } from "react";
+import { authAPI } from "./requests/index";
 
 const AuthContext = createContext();
-console.log("create AuthContext: " + AuthContext);
 
-// THESE ARE ALL THE TYPES OF UPDATES TO OUR AUTH STATE THAT CAN BE PROCESSED
-export const AuthActionType = {
-    GET_LOGGED_IN: "GET_LOGGED_IN",
-    LOGIN_USER: "LOGIN_USER",
-    LOGOUT_USER: "LOGOUT_USER",
-    REGISTER_USER: "REGISTER_USER"
-}
+export const useAuth = () => {
+  const context = useContext(AuthContext);
+  if (!context) {
+    throw new Error("useAuth must be used within AuthProvider");
+  }
+  return context;
+};
 
-function AuthContextProvider(props) {
-    const [auth, setAuth] = useState({
-        user: null,
-        loggedIn: false,
-        errorMessage: null
-    });
-    const history = useHistory();
+export const AuthProvider = ({ children }) => {
+  const [user, setUser] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [isGuest, setIsGuest] = useState(false);
 
-    useEffect(() => {
-        auth.getLoggedIn();
-    }, []);
+  useEffect(() => {
+    checkAuth();
+  }, []);
 
-    const authReducer = (action) => {
-        const { type, payload } = action;
-        switch (type) {
-            case AuthActionType.GET_LOGGED_IN: {
-                return setAuth({
-                    user: payload.user,
-                    loggedIn: payload.loggedIn,
-                    errorMessage: null
-                });
-            }
-            case AuthActionType.LOGIN_USER: {
-                return setAuth({
-                    user: payload.user,
-                    loggedIn: payload.loggedIn,
-                    errorMessage: payload.errorMessage
-                })
-            }
-            case AuthActionType.LOGOUT_USER: {
-                return setAuth({
-                    user: null,
-                    loggedIn: false,
-                    errorMessage: null
-                })
-            }
-            case AuthActionType.REGISTER_USER: {
-                return setAuth({
-                    user: payload.user,
-                    loggedIn: payload.loggedIn,
-                    errorMessage: payload.errorMessage
-                })
-            }
-            default:
-                return auth;
-        }
+  const checkAuth = async () => {
+    try {
+      const token = localStorage.getItem("token");
+      if (token) {
+        const response = await authAPI.getMe();
+        setUser(response.data.user);
+      }
+    } catch (error) {
+      localStorage.removeItem("token");
+    } finally {
+      setLoading(false);
     }
+  };
 
-    auth.getLoggedIn = async function () {
-        const response = await authRequestSender.getLoggedIn();
-        if (response.status === 200) {
-            authReducer({
-                type: AuthActionType.GET_LOGGED_IN,
-                payload: {
-                    loggedIn: response.data.loggedIn,
-                    user: response.data.user
-                }
-            });
-        }
-    }
+  const register = async (userData) => {
+    const response = await authAPI.register(userData);
+    return response.data;
+  };
 
-    auth.registerUser = async function(firstName, lastName, email, password, passwordVerify) {
-        console.log("REGISTERING USER");
-        try{   
-            const response = await authRequestSender.registerUser(firstName, lastName, email, password, passwordVerify);   
-            if (response.status === 200) {
-                console.log("Registered Sucessfully");
-                authReducer({
-                    type: AuthActionType.REGISTER_USER,
-                    payload: {
-                        user: response.data.user,
-                        loggedIn: true,
-                        errorMessage: null
-                    }
-                })
-                history.push("/login");
-                console.log("NOW WE LOGIN");
-                auth.loginUser(email, password);
-                console.log("LOGGED IN");
-            }
-        } catch(error){
-            authReducer({
-                type: AuthActionType.REGISTER_USER,
-                payload: {
-                    user: auth.user,
-                    loggedIn: false,
-                    errorMessage: error.response.data.errorMessage
-                }
-            })
-        }
-    }
+  const login = async (credentials) => {
+    const response = await authAPI.login(credentials);
+    localStorage.setItem("token", response.data.token);
+    setUser(response.data.user);
+    setIsGuest(false);
+    return response.data;
+  };
 
-    auth.loginUser = async function(email, password) {
-        try{
-            const response = await authRequestSender.loginUser(email, password);
-            if (response.status === 200) {
-                authReducer({
-                    type: AuthActionType.LOGIN_USER,
-                    payload: {
-                        user: response.data.user,
-                        loggedIn: true,
-                        errorMessage: null
-                    }
-                })
-                history.push("/");
-            }
-        } catch(error){
-            authReducer({
-                type: AuthActionType.LOGIN_USER,
-                payload: {
-                    user: auth.user,
-                    loggedIn: false,
-                    errorMessage: error.response.data.errorMessage
-                }
-            })
-        }
-    }
+  const logout = () => {
+    localStorage.removeItem("token");
+    setUser(null);
+    setIsGuest(false);
+  };
 
-    auth.logoutUser = async function() {
-        const response = await authRequestSender.logoutUser();
-        if (response.status === 200) {
-            authReducer( {
-                type: AuthActionType.LOGOUT_USER,
-                payload: null
-            })
-            history.push("/");
-        }
-    }
+  const continueAsGuest = () => {
+    setIsGuest(true);
+  };
 
-    auth.getUserInitials = function() {
-        let initials = "";
-        if (auth.user) {
-            initials += auth.user.firstName.charAt(0);
-            initials += auth.user.lastName.charAt(0);
-        }
-        console.log("user initials: " + initials);
-        return initials;
-    }
+  const updateAccount = async (data) => {
+    const response = await authAPI.updateAccount(data);
+    setUser(response.data.user);
+    return response.data;
+  };
 
-    return (
-        <AuthContext.Provider value={{
-            auth
-        }}>
-            {props.children}
-        </AuthContext.Provider>
-    );
-}
+  const value = {
+    user,
+    loading,
+    isGuest,
+    isAuthenticated: !!user,
+    register,
+    login,
+    logout,
+    continueAsGuest,
+    updateAccount,
+  };
 
-export default AuthContext;
-export { AuthContextProvider };
+  return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
+};
