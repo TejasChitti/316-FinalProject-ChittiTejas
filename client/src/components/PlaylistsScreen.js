@@ -1,12 +1,13 @@
-import React, { useState, useEffect } from "react";
-import { useAuth } from "../auth/index";
-import { playlistsAPI } from "../auth/requests/index";
+import React, { useState, useEffect, useContext } from "react";
+import AuthContext from "../auth/index";
+import { GlobalStoreContext } from "../store/index";
 import EditPlaylistModal from "./EditPlaylistModal";
 import PlayPlaylistModal from "./PlayPlaylistModal";
 import DeleteConfirmModal from "./DeleteConfirmModal";
 
 const PlaylistsScreen = () => {
-  const { user, isAuthenticated } = useAuth();
+  const { auth } = useContext(AuthContext);
+  const { store } = useContext(GlobalStoreContext);
   const [playlists, setPlaylists] = useState([]);
   const [loading, setLoading] = useState(true);
   const [searchParams, setSearchParams] = useState({
@@ -29,13 +30,12 @@ const PlaylistsScreen = () => {
   const loadPlaylists = async () => {
     try {
       setLoading(true);
-      const params = {
-        ...searchParams,
-        sortBy,
-        sortOrder,
-      };
-      const response = await playlistsAPI.getAll(params);
-      setPlaylists(response.data);
+      const criteria = { ...searchParams };
+      // Remove empty search params
+      Object.keys(criteria).forEach((key) => {
+        if (!criteria[key]) delete criteria[key];
+      });
+      await store.searchPlaylists(criteria);
     } catch (error) {
       console.error("Error loading playlists:", error);
     } finally {
@@ -74,19 +74,10 @@ const PlaylistsScreen = () => {
 
   const handleCreatePlaylist = async () => {
     try {
-      let counter = 0;
-      let name = `Untitled${counter}`;
-
-      while (
-        playlists.some((p) => p.name === name && p.owner._id === user?.id)
-      ) {
-        counter++;
-        name = `Untitled${counter}`;
+      await store.createNewList();
+      if (store.currentList) {
+        setEditingPlaylist(store.currentList);
       }
-
-      const response = await playlistsAPI.create({ name });
-      setEditingPlaylist(response.data);
-      loadPlaylists();
     } catch (error) {
       console.error("Error creating playlist:", error);
     }
@@ -102,7 +93,7 @@ const PlaylistsScreen = () => {
 
   const handleCopy = async (playlist) => {
     try {
-      await playlistsAPI.copy(playlist._id);
+      await store.copyPlaylist(playlist._id);
       loadPlaylists();
     } catch (error) {
       console.error("Error copying playlist:", error);
@@ -115,7 +106,7 @@ const PlaylistsScreen = () => {
 
   const confirmDelete = async () => {
     try {
-      await playlistsAPI.delete(deletingPlaylist._id);
+      await store.deleteList(deletingPlaylist._id);
       setDeletingPlaylist(null);
       loadPlaylists();
     } catch (error) {
@@ -243,7 +234,7 @@ const PlaylistsScreen = () => {
                   )}
                 </div>
                 <div className="playlist-actions">
-                  {isAuthenticated && playlist.owner._id === user?.id && (
+                  {auth.loggedIn && auth.isOwner(playlist.ownerEmail) && (
                     <>
                       <button
                         className="action-btn btn-edit"
@@ -259,7 +250,7 @@ const PlaylistsScreen = () => {
                       </button>
                     </>
                   )}
-                  {isAuthenticated && playlist.owner._id !== user?.id && (
+                  {auth.canEdit() && playlist.owner._id !== auth.user?.id && (
                     <button
                       className="action-btn btn-copy"
                       onClick={() => handleCopy(playlist)}
@@ -278,11 +269,11 @@ const PlaylistsScreen = () => {
             ))}
           </div>
         )}
-        {isAuthenticated && (
+        {
           <button className="new-playlist-btn" onClick={handleCreatePlaylist}>
             ➕ New Playlist
           </button>
-        )}
+        }
       </div>
 
       {editingPlaylist && (

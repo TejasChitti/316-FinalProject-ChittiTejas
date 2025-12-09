@@ -1,10 +1,12 @@
-import React, { useState } from "react";
+import React, { useState, useContext } from "react";
 import { useNavigate } from "react-router-dom";
-import { useAuth } from "../auth/index";
+import AuthContext from "../auth/index";
+import { GlobalStoreContext } from "../store/index";
 
 const Register = () => {
   const navigate = useNavigate();
-  const { register } = useAuth();
+  const { auth } = useContext(AuthContext);
+  const { store } = useContext(GlobalStoreContext);
   const [formData, setFormData] = useState({
     userName: "",
     email: "",
@@ -86,12 +88,17 @@ const Register = () => {
     setLoading(true);
 
     try {
-      await register({
-        userName: formData.userName,
-        email: formData.email,
-        password: formData.password,
-        avatarImage: formData.avatarImage,
-      });
+      await auth.registerUser(
+        {
+          firstName: formData.userName,
+          lastName: formData.userName,
+          email: formData.email,
+          password: formData.password,
+          passwordVerify: formData.passwordConfirm,
+          avatar: formData.avatarImage,
+        },
+        store
+      );
       navigate("/login");
     } catch (error) {
       setErrors({

@@ -1,11 +1,13 @@
-import React, { useState } from "react";
+import React, { useState, useContext } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
-import { useAuth } from "../auth/index";
+import AuthContext from "../auth/index";
+import { GlobalStoreContext } from "../store/index";
 
 const TitleBar = () => {
   const navigate = useNavigate();
   const location = useLocation();
-  const { user, isAuthenticated, isGuest, logout } = useAuth();
+  const { auth } = useContext(AuthContext);
+  const { store } = useContext(GlobalStoreContext);
   const [showDropdown, setShowDropdown] = useState(false);
 
   const handleHomeClick = () => {
@@ -34,7 +36,7 @@ const TitleBar = () => {
         navigate("/edit-account");
         break;
       case "logout":
-        logout();
+        auth.logoutUser(store);
         navigate("/");
         break;
       default:
@@ -43,7 +45,7 @@ const TitleBar = () => {
   };
 
   // Hide title bar on welcome screen if not authenticated
-  if (location.pathname === "/" && !isAuthenticated && !isGuest) {
+  if (location.pathname === "/" && !auth.loggedIn && !auth.isGuest) {
     return null;
   }
 
@@ -53,7 +55,7 @@ const TitleBar = () => {
         <div className="home-icon" onClick={handleHomeClick}>
           <img className="home-image" src="/icon.png" />
         </div>
-        {(isAuthenticated || isGuest) && (
+        {(auth.loggedIn || auth.isGuest) && (
           <div className="nav-buttons">
             <button
               className={`nav-button ${
@@ -78,7 +80,7 @@ const TitleBar = () => {
       <div className="title-bar-center">The Playlister</div>
 
       <div className="account-menu">
-        {isAuthenticated ? (
+        {auth.loggedIn ? (
           <>
             <img
               src="/Avatar.png"

@@ -1,45 +1,62 @@
 const jwt = require("jsonwebtoken");
-const User = require("../models/user-model");
 
-const auth = async (req, res, next) => {
-  try {
-    const token = req.header("Authorization")?.replace("Bearer ", "");
-
-    if (!token) {
-      throw new Error();
-    }
-
-    const decoded = jwt.verify(token, process.env.JWT_SECRET);
-    const user = await User.findById(decoded.userId);
-
-    if (!user) {
-      throw new Error();
-    }
-
-    req.user = user;
-    req.token = token;
-    next();
-  } catch (error) {
-    res.status(401).json({ error: "Please authenticate" });
-  }
-};
-
-const optionalAuth = async (req, res, next) => {
-  try {
-    const token = req.header("Authorization")?.replace("Bearer ", "");
-
-    if (token) {
-      const decoded = jwt.verify(token, process.env.JWT_SECRET);
-      const user = await User.findById(decoded.userId);
-
-      if (user) {
-        req.user = user;
+function authManager() {
+  verify = (req, res, next) => {
+    try {
+      const token = req.cookies.token;
+      if (!token) {
+        return res.status(401).json({
+          loggedIn: false,
+          user: null,
+          errorMessage: "Unauthorized",
+        });
       }
-    }
-    next();
-  } catch (error) {
-    next();
-  }
-};
 
-module.exports = { auth, optionalAuth };
+      const verified = jwt.verify(token, process.env.JWT_SECRET);
+      req.userId = verified.userId;
+      req.userEmail = verified.email;
+
+      next();
+    } catch (err) {
+      console.error(err);
+      return res.status(401).json({
+        loggedIn: false,
+        user: null,
+        errorMessage: "Unauthorized",
+      });
+    }
+  };
+
+  verifyUser = (req) => {
+    try {
+      const token = req.cookies.token;
+      if (!token) {
+        return null;
+      }
+
+      const verified = jwt.verify(token, process.env.JWT_SECRET);
+      return verified.userId;
+    } catch (err) {
+      return null;
+    }
+  };
+
+  signToken = (userId, email) => {
+    return jwt.sign(
+      {
+        userId: userId,
+        email: email,
+      },
+      process.env.JWT_SECRET
+    );
+  };
+
+  return {
+    verify,
+    verifyUser,
+    signToken,
+  };
+}
+
+const auth = authManager();
+module.exports = auth;

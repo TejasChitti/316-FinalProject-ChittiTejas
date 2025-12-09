@@ -1,79 +1,169 @@
-import React, { createContext, useState, useContext, useEffect } from "react";
-import { authAPI } from "./requests/index";
+import { createContext, useContext, useState } from "react";
+import { useNavigate } from "react-router-dom";
+import api from "./requests";
 
 const AuthContext = createContext();
 
-export const useAuth = () => {
-  const context = useContext(AuthContext);
-  if (!context) {
-    throw new Error("useAuth must be used within AuthProvider");
-  }
-  return context;
+export const AuthActionType = {
+  GET_LOGGED_IN: "GET_LOGGED_IN",
+  REGISTER_USER: "REGISTER_USER",
+  LOGIN_USER: "LOGIN_USER",
+  LOGOUT_USER: "LOGOUT_USER",
+  SET_ERROR_MESSAGE: "SET_ERROR_MESSAGE",
+  CONTINUE_AS_GUEST: "CONTINUE_AS_GUEST",
+  UPDATE_USER: "UPDATE_USER",
 };
 
-export const AuthProvider = ({ children }) => {
-  const [user, setUser] = useState(null);
-  const [loading, setLoading] = useState(true);
-  const [isGuest, setIsGuest] = useState(false);
+function AuthContextProvider(props) {
+  const [auth, setAuth] = useState({
+    user: null,
+    loggedIn: false,
+    isGuest: false,
+    errorMessage: null,
+  });
+  const navigate = useNavigate();
 
-  useEffect(() => {
-    checkAuth();
-  }, []);
-
-  const checkAuth = async () => {
+  auth.getLoggedIn = async function () {
     try {
-      const token = localStorage.getItem("token");
-      if (token) {
-        const response = await authAPI.getMe();
-        setUser(response.data.user);
+      const response = await api.getLoggedIn();
+      if (response.data.loggedIn) {
+        setAuth({
+          user: response.data.user,
+          loggedIn: true,
+          isGuest: false,
+          errorMessage: null,
+        });
       }
-    } catch (error) {
-      localStorage.removeItem("token");
-    } finally {
-      setLoading(false);
+    } catch (err) {
+      console.error(err);
     }
   };
 
-  const register = async (userData) => {
-    const response = await authAPI.register(userData);
-    return response.data;
+  auth.registerUser = async function (userData, store) {
+    try {
+      const response = await api.registerUser(userData);
+      if (response.data.success) {
+        setAuth({
+          user: null,
+          loggedIn: false,
+          isGuest: false,
+          errorMessage: null,
+        });
+        // Redirect to login after successful registration
+        navigate("/login");
+      }
+    } catch (err) {
+      const errorMessage =
+        err.response?.data?.errorMessage || "Registration failed";
+      setAuth({
+        user: null,
+        loggedIn: false,
+        isGuest: false,
+        errorMessage: errorMessage,
+      });
+    }
   };
 
-  const login = async (credentials) => {
-    const response = await authAPI.login(credentials);
-    localStorage.setItem("token", response.data.token);
-    setUser(response.data.user);
-    setIsGuest(false);
-    return response.data;
+  auth.loginUser = async function (email, password, store) {
+    try {
+      const response = await api.loginUser(email, password);
+      if (response.data.success) {
+        setAuth({
+          user: response.data.user,
+          loggedIn: true,
+          isGuest: false,
+          errorMessage: null,
+        });
+        navigate("/playlists");
+        store.loadIdNamePairs();
+      }
+    } catch (err) {
+      const errorMessage = err.response?.data?.errorMessage || "Login failed";
+      setAuth({
+        user: null,
+        loggedIn: false,
+        isGuest: false,
+        errorMessage: errorMessage,
+      });
+    }
   };
 
-  const logout = () => {
-    localStorage.removeItem("token");
-    setUser(null);
-    setIsGuest(false);
+  auth.logoutUser = async function (store) {
+    try {
+      await api.logoutUser();
+      setAuth({
+        user: null,
+        loggedIn: false,
+        isGuest: false,
+        errorMessage: null,
+      });
+      store.closeCurrentList();
+      navigate("/");
+    } catch (err) {
+      console.error(err);
+    }
   };
 
-  const continueAsGuest = () => {
-    setIsGuest(true);
+  auth.continueAsGuest = function (store) {
+    setAuth({
+      user: null,
+      loggedIn: false,
+      isGuest: true,
+      errorMessage: null,
+    });
+    navigate("/playlists");
+    store.loadIdNamePairs();
   };
 
-  const updateAccount = async (data) => {
-    const response = await authAPI.updateAccount(data);
-    setUser(response.data.user);
-    return response.data;
+  auth.updateUser = async function (userData) {
+    try {
+      const response = await api.updateUser(userData);
+      if (response.data.success) {
+        setAuth({
+          user: response.data.user,
+          loggedIn: true,
+          isGuest: false,
+          errorMessage: null,
+        });
+        navigate("/playlists");
+      }
+    } catch (err) {
+      const errorMessage = err.response?.data?.errorMessage || "Update failed";
+      setAuth({
+        ...auth,
+        errorMessage: errorMessage,
+      });
+    }
   };
 
-  const value = {
-    user,
-    loading,
-    isGuest,
-    isAuthenticated: !!user,
-    register,
-    login,
-    logout,
-    continueAsGuest,
-    updateAccount,
+  auth.setErrorMessage = function (message) {
+    setAuth({
+      ...auth,
+      errorMessage: message,
+    });
   };
 
-  return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
-};
+  auth.clearErrorMessage = function () {
+    setAuth({
+      ...auth,
+      errorMessage: null,
+    });
+  };
+
+  auth.canEdit = function () {
+    return auth.loggedIn && !auth.isGuest;
+  };
+
+  auth.isOwner = function (email) {
+    return auth.loggedIn && auth.user && auth.user.email === email;
+  };
+
+  return (
+    <AuthContext.Provider value={{ auth }}>
+      {props.children}
+    </AuthContext.Provider>
+  );
+}
+
+export default AuthContext;
+export { AuthContextProvider };

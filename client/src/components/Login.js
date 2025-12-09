@@ -1,10 +1,13 @@
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { useAuth } from "../auth/index";
+import { useContext } from "react";
+import AuthContext from "../auth/index";
+import { GlobalStoreContext } from "../store/index";
 
 const Login = () => {
   const navigate = useNavigate();
-  const { login } = useAuth();
+  const { auth } = useContext(AuthContext);
+  const { store } = useContext(GlobalStoreContext);
   const [formData, setFormData] = useState({
     email: "",
     password: "",
@@ -17,7 +20,6 @@ const Login = () => {
       ...formData,
       [e.target.name]: e.target.value,
     });
-    // Clear error for this field
     if (errors[e.target.name]) {
       setErrors({
         ...errors,
@@ -32,7 +34,7 @@ const Login = () => {
     setLoading(true);
 
     try {
-      await login(formData);
+      await auth.loginUser(formData.email, formData.password, store);
       navigate("/playlists");
     } catch (error) {
       setErrors({

@@ -1,50 +1,89 @@
 import axios from "axios";
-
-const API_BASE_URL =
-  process.env.REACT_APP_API_URL || "http://localhost:5000/api";
+axios.defaults.withCredentials = true;
 
 const api = axios.create({
-  baseURL: API_BASE_URL,
-  headers: {
-    "Content-Type": "application/json",
-  },
+  baseURL: "http://localhost:4000",
 });
 
-// Add token to requests
-api.interceptors.request.use((config) => {
-  const token = localStorage.getItem("token");
-  if (token) {
-    config.headers.Authorization = `Bearer ${token}`;
-  }
-  return config;
-});
-
-// Auth API
-export const authAPI = {
-  register: (data) => api.post("/auth/register", data),
-  login: (data) => api.post("/auth/login", data),
-  getMe: () => api.get("/auth/me"),
-  updateAccount: (data) => api.put("/auth/update", data),
+// Auth requests
+export const registerUser = (userData) => {
+  return api.post("/auth/register", userData);
 };
 
-// Playlists API
-export const playlistsAPI = {
-  getAll: (params) => api.get("/playlists", { params }),
-  getById: (id) => api.get(`/playlists/${id}`),
-  create: (data) => api.post("/playlists", data),
-  update: (id, data) => api.put(`/playlists/${id}`, data),
-  copy: (id) => api.post(`/playlists/${id}/copy`),
-  delete: (id) => api.delete(`/playlists/${id}`),
-  play: (id) => api.post(`/playlists/${id}/play`),
+export const loginUser = (email, password) => {
+  return api.post("/auth/login", { email, password });
 };
 
-// Songs API
-export const songsAPI = {
-  getAll: (params) => api.get("/songs", { params }),
-  getById: (id) => api.get(`/songs/${id}`),
-  create: (data) => api.post("/songs", data),
-  update: (id, data) => api.put(`/songs/${id}`, data),
-  delete: (id) => api.delete(`/songs/${id}`),
+export const logoutUser = () => {
+  return api.get("/auth/logout");
 };
 
-export default api;
+export const getLoggedIn = () => {
+  return api.get("/auth/loggedIn");
+};
+
+export const updateUser = (userData) => {
+  return api.put("/auth/update", userData);
+};
+
+// Playlist requests
+export const getPlaylists = (params) => {
+  return api.get("/api/playlists", { params });
+};
+
+export const createPlaylist = (data) => {
+  return api.post("/api/playlists", data);
+};
+
+export const updatePlaylist = (id, data) => {
+  return api.put(`/api/playlists/${id}`, data);
+};
+
+export const deletePlaylist = (id) => {
+  return api.delete(`/api/playlists/${id}`);
+};
+
+export const copyPlaylist = (id) => {
+  return api.post(`/api/playlists/${id}/copy`);
+};
+
+export const playPlaylist = (id) => {
+  return api.post(`/api/playlists/${id}/play`);
+};
+
+// Song requests
+export const getSongs = (params) => {
+  return api.get("/api/songs", { params });
+};
+
+export const createSong = (data) => {
+  return api.post("/api/songs", data);
+};
+
+export const updateSong = (id, data) => {
+  return api.put(`/api/songs/${id}`, data);
+};
+
+export const deleteSong = (id) => {
+  return api.delete(`/api/songs/${id}`);
+};
+
+const apis = {
+  registerUser,
+  loginUser,
+  logoutUser,
+  getLoggedIn,
+  updateUser,
+  getPlaylists,
+  createPlaylist,
+  updatePlaylist,
+  deletePlaylist,
+  copyPlaylist,
+  playPlaylist,
+  getSongs,
+  createSong,
+  updateSong,
+  deleteSong,
+};
+
+export default apis;

@@ -1,7 +1,8 @@
-import React, { useState } from "react";
-import { songsAPI } from "../auth/requests/index";
+import React, { useState, useContext } from "react";
+import { GlobalStoreContext } from "../store/index";
 
 const EditSongModal = ({ song, onClose }) => {
+  const { store } = useContext(GlobalStoreContext);
   const [formData, setFormData] = useState({
     title: song?.title || "",
     artist: song?.artist || "",
@@ -62,9 +63,9 @@ const EditSongModal = ({ song, onClose }) => {
       };
 
       if (song) {
-        await songsAPI.update(song._id, data);
+        await store.updateSong(song._id, data);
       } else {
-        await songsAPI.create(data);
+        await store.createSong(data);
       }
       onClose();
     } catch (error) {

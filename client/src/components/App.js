@@ -5,7 +5,11 @@ import {
   Route,
   Navigate,
 } from "react-router-dom";
-import { AuthProvider, useAuth } from "../auth/index";
+import { useContext } from "react";
+import { AuthContextProvider } from "../auth/index";
+import AuthContext from "../auth/index";
+import { GlobalStoreContextProvider } from "../store/index";
+import { GlobalStoreContext } from "../store/index";
 import TitleBar from "./TitleBar";
 import WelcomeScreen from "./WelcomeScreen";
 import Login from "./Login";
@@ -16,23 +20,35 @@ import SongsScreen from "./SongsScreen";
 import "../App.css";
 
 const PrivateRoute = ({ children }) => {
-  const { isAuthenticated, loading } = useAuth();
+  const { auth } = useContext(AuthContext);
 
-  if (loading) {
+  // Show loading while checking auth
+  if (auth.loading) {
     return <div className="loading">Loading...</div>;
   }
 
-  return isAuthenticated ? children : <Navigate to="/login" />;
+  // Redirect if not logged in or is guest
+  if (!auth.loggedIn || auth.isGuest) {
+    return <Navigate to="/login" />;
+  }
+
+  return children;
 };
 
 const GuestRoute = ({ children }) => {
-  const { isAuthenticated, isGuest, loading } = useAuth();
+  const { auth } = useContext(AuthContext);
 
-  if (loading) {
+  // Show loading while checking auth
+  if (auth.loading) {
     return <div className="loading">Loading...</div>;
   }
 
-  return isAuthenticated || isGuest ? children : <Navigate to="/" />;
+  // Redirect if not logged in and not guest
+  if (!auth.loggedIn && !auth.isGuest) {
+    return <Navigate to="/" />;
+  }
+
+  return children;
 };
 
 function AppContent() {
@@ -77,9 +93,11 @@ function AppContent() {
 function App() {
   return (
     <Router>
-      <AuthProvider>
-        <AppContent />
-      </AuthProvider>
+      <AuthContextProvider>
+        <GlobalStoreContextProvider>
+          <AppContent />
+        </GlobalStoreContextProvider>
+      </AuthContextProvider>
     </Router>
   );
 }

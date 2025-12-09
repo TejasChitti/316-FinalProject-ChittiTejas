@@ -1,12 +1,13 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useContext } from "react";
 import YouTube from "react-youtube";
-import { useAuth } from "../auth/index";
-import { songsAPI, playlistsAPI } from "../auth/requests/index";
+import AuthContext from "../auth/index";
+import { GlobalStoreContext } from "../store/index";
 import EditSongModal from "./EditSongModal";
 import DeleteConfirmModal from "./DeleteConfirmModal";
 
 const SongsScreen = () => {
-  const { user, isAuthenticated } = useAuth();
+  const { auth } = useContext(AuthContext);
+  const { store } = useContext(GlobalStoreContext);
   const [songs, setSongs] = useState([]);
   const [playlists, setPlaylists] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -25,23 +26,18 @@ const SongsScreen = () => {
 
   useEffect(() => {
     loadSongs();
-    if (isAuthenticated) {
-      loadPlaylists();
-    }
-  }, [sortBy, sortOrder, isAuthenticated]);
+  }, [sortBy, sortOrder]);
 
   const loadSongs = async () => {
     try {
       setLoading(true);
-      const params = {
-        ...searchParams,
-        sortBy,
-        sortOrder,
-      };
-      const response = await songsAPI.getAll(params);
-      setSongs(response.data);
-      if (response.data.length > 0) {
-        setSelectedSong(response.data[0]);
+      const criteria = { ...searchParams };
+      Object.keys(criteria).forEach((key) => {
+        if (!criteria[key]) delete criteria[key];
+      });
+      await store.searchSongs(criteria);
+      if (store.songs.length > 0) {
+        setSelectedSong(store.songs[0]);
       }
     } catch (error) {
       console.error("Error loading songs:", error);
@@ -52,11 +48,7 @@ const SongsScreen = () => {
 
   const loadPlaylists = async () => {
     try {
-      const response = await playlistsAPI.getAll({});
-      const userPlaylists = response.data
-        .filter((p) => p.owner._id === user?.id)
-        .sort((a, b) => new Date(b.lastAccessed) - new Date(a.lastAccessed));
-      setPlaylists(userPlaylists);
+      await store.loadIdNamePairs();
     } catch (error) {
       console.error("Error loading playlists:", error);
     }
@@ -99,16 +91,7 @@ const SongsScreen = () => {
 
   const handleAddToPlaylist = async (song, playlistId) => {
     try {
-      const playlist = playlists.find((p) => p._id === playlistId);
-      const newSongs = [
-        ...playlist.songs,
-        {
-          song: song._id,
-          order: playlist.songs.length,
-        },
-      ];
-
-      await playlistsAPI.update(playlistId, { songs: newSongs });
+      await store.addSongToPlaylist(song);
       setOpenMenu(null);
       alert("Song added to playlist!");
     } catch (error) {
@@ -129,9 +112,8 @@ const SongsScreen = () => {
 
   const confirmDelete = async () => {
     try {
-      await songsAPI.delete(deletingSong._id);
+      await store.deleteSong(deletingSong._id);
       setDeletingSong(null);
-      loadSongs();
     } catch (error) {
       console.error("Error deleting song:", error);
       alert("Failed to delete song");
@@ -193,7 +175,7 @@ const SongsScreen = () => {
           </div>
         )}
 
-        {isAuthenticated && (
+        {auth.loggedIn && (
           <button
             className="new-playlist-btn"
             onClick={() => setShowNewSongModal(true)}
@@ -237,7 +219,8 @@ const SongsScreen = () => {
         ) : (
           <div className="playlist-list">
             {songs.map((song) => {
-              const isOwned = isAuthenticated && song.addedBy._id === user?.id;
+              const isOwned =
+                auth.loggedIn && song.addedBy._id === auth.user?.id;
               return (
                 <div
                   key={song._id}
@@ -253,7 +236,7 @@ const SongsScreen = () => {
                       <span>Playlists: {song.playlistCount}</span>
                     </div>
                   </div>
-                  {isAuthenticated && (
+                  {auth.loggedIn && (
                     <div className="song-menu">
                       <button
                         className="menu-button"

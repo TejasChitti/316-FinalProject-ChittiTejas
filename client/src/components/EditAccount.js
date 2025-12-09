@@ -1,15 +1,16 @@
-import React, { useState } from "react";
+import React, { useState, useContext } from "react";
 import { useNavigate } from "react-router-dom";
-import { useAuth } from "../auth/index";
+import AuthContext from "../auth/index";
+import { GlobalStoreContext } from "../store/index";
 
 const EditAccount = () => {
   const navigate = useNavigate();
-  const { user, updateAccount } = useAuth();
+  const { auth } = useContext(AuthContext);
   const [formData, setFormData] = useState({
-    userName: user?.userName || "",
+    userName: auth.user?.userName || "",
     password: "",
     passwordConfirm: "",
-    avatarImage: user?.avatarImage || "",
+    avatarImage: auth.user?.avatarImage || "",
   });
   const [errors, setErrors] = useState({});
   const [loading, setLoading] = useState(false);
@@ -59,14 +60,16 @@ const EditAccount = () => {
     setLoading(true);
     try {
       const updateData = {
-        userName: formData.userName,
-        avatarImage: formData.avatarImage,
+        firstName: formData.userName,
+        lastName: formData.userName,
+        avatar: formData.avatarImage,
       };
       if (formData.password) {
         updateData.password = formData.password;
+        updateData.passwordVerify = formData.password;
       }
 
-      await updateAccount(updateData);
+      await auth.updateUser(updateData);
       navigate("/playlists");
     } catch (error) {
       setErrors({ general: error.response?.data?.error || "Update failed" });
@@ -127,7 +130,7 @@ const EditAccount = () => {
               type="text"
               className="form-input"
               placeholder="Email"
-              value={user?.email}
+              value={auth.user?.email}
               disabled
               style={{ background: "#f0f0f0", cursor: "not-allowed" }}
             />

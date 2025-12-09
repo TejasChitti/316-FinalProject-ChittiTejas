@@ -1,8 +1,9 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useContext } from "react";
 import YouTube from "react-youtube";
-import { playlistsAPI } from "../auth/requests/index";
+import { GlobalStoreContext } from "../store/index";
 
 const PlayPlaylistModal = ({ playlist, onClose }) => {
+  const { store } = useContext(GlobalStoreContext);
   const [currentIndex, setCurrentIndex] = useState(0);
   const [player, setPlayer] = useState(null);
   const [isPlaying, setIsPlaying] = useState(false);
@@ -10,8 +11,8 @@ const PlayPlaylistModal = ({ playlist, onClose }) => {
 
   useEffect(() => {
     // Track that this playlist is being played
-    playlistsAPI.play(playlist._id).catch(console.error);
-  }, [playlist._id]);
+    store.playPlaylist(playlist._id).catch(console.error);
+  }, [playlist._id, store]);
 
   const songs = playlist.songs.sort((a, b) => a.order - b.order);
   const currentSong = songs[currentIndex];

@@ -1,13 +1,14 @@
-import React from "react";
+import React, { useContext } from "react";
 import { useNavigate } from "react-router-dom";
-import { useAuth } from "../auth/index";
+import AuthContext from "../auth/index";
+import { GlobalStoreContext } from "../store/index";
 
 const WelcomeScreen = () => {
   const navigate = useNavigate();
-  const { continueAsGuest } = useAuth();
-
+  const { auth } = useContext(AuthContext);
+  const { store } = useContext(GlobalStoreContext);
   const handleContinueAsGuest = () => {
-    continueAsGuest();
+    auth.continueAsGuest(store);
     navigate("/playlists");
   };
 

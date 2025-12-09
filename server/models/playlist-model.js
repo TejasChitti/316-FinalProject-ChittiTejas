@@ -1,56 +1,57 @@
 const mongoose = require("mongoose");
+const Schema = mongoose.Schema;
 
-const playlistSchema = new mongoose.Schema(
+const PlaylistSchema = new Schema(
   {
     name: {
       type: String,
       required: true,
-      trim: true,
     },
-    owner: {
-      type: mongoose.Schema.Types.ObjectId,
-      ref: "User",
+    ownerEmail: {
+      type: String,
       required: true,
+    },
+    ownerFirstName: {
+      type: String,
+      required: true,
+    },
+    ownerLastName: {
+      type: String,
+      required: true,
+    },
+    ownerAvatar: {
+      type: String,
+      default: "",
     },
     songs: [
       {
-        song: {
-          type: mongoose.Schema.Types.ObjectId,
-          ref: "Song",
-        },
-        order: {
-          type: Number,
-          required: true,
-        },
+        type: Schema.Types.ObjectId,
+        ref: "Song",
       },
     ],
     listeners: [
       {
-        type: mongoose.Schema.Types.ObjectId,
-        ref: "User",
+        type: String,
       },
     ],
-    listenerCount: {
+    plays: {
       type: Number,
       default: 0,
+    },
+    published: {
+      type: Boolean,
+      default: true,
     },
     lastAccessed: {
       type: Date,
       default: Date.now,
     },
   },
-  {
-    timestamps: true,
-  }
+  { timestamps: true }
 );
 
-// Compound index to ensure unique playlist names per user
-playlistSchema.index({ name: 1, owner: 1 }, { unique: true });
+PlaylistSchema.index({ ownerEmail: 1 });
 
-// Update lastAccessed timestamp
-playlistSchema.methods.updateAccess = function () {
-  this.lastAccessed = new Date();
-  return this.save();
-};
+PlaylistSchema.index({ name: 1, ownerEmail: 1 }, { unique: true });
 
-module.exports = mongoose.model("Playlist", playlistSchema);
+module.exports = mongoose.model("Playlist", PlaylistSchema);

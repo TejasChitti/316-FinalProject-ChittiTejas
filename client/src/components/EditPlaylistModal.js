@@ -1,6 +1,6 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useContext } from "react";
 import { useNavigate } from "react-router-dom";
-import { playlistsAPI } from "../auth/requests/index";
+import { GlobalStoreContext } from "../store/index";
 
 const EditPlaylistModal = ({ playlist, onClose }) => {
   const navigate = useNavigate();
@@ -8,6 +8,8 @@ const EditPlaylistModal = ({ playlist, onClose }) => {
   const [songs, setSongs] = useState([]);
   const [history, setHistory] = useState([]);
   const [historyIndex, setHistoryIndex] = useState(-1);
+
+  const { store } = useContext(GlobalStoreContext);
 
   useEffect(() => {
     if (playlist.songs && playlist.songs.length > 0) {
@@ -30,44 +32,22 @@ const EditPlaylistModal = ({ playlist, onClose }) => {
   };
 
   const handleUndo = () => {
-    if (historyIndex > 0) {
-      setHistoryIndex(historyIndex - 1);
-      setSongs(history[historyIndex - 1]);
-    }
+    store.undo();
   };
 
   const handleRedo = () => {
-    if (historyIndex < history.length - 1) {
-      setHistoryIndex(historyIndex + 1);
-      setSongs(history[historyIndex + 1]);
-    }
+    store.redo();
   };
 
   const handleMoveSong = (index, direction) => {
-    const newSongs = [...songs];
     const targetIndex = direction === "up" ? index - 1 : index + 1;
+    if (targetIndex < 0 || targetIndex >= songs.length) return;
 
-    if (targetIndex < 0 || targetIndex >= newSongs.length) return;
-
-    [newSongs[index], newSongs[targetIndex]] = [
-      newSongs[targetIndex],
-      newSongs[index],
-    ];
-
-    // Update order
-    newSongs.forEach((song, i) => {
-      song.order = i;
-    });
-
-    addToHistory(newSongs);
+    store.addMoveSongTransaction(index, targetIndex);
   };
 
   const handleRemoveSong = (index) => {
-    const newSongs = songs.filter((_, i) => i !== index);
-    newSongs.forEach((song, i) => {
-      song.order = i;
-    });
-    addToHistory(newSongs);
+    store.addRemoveSongTransaction(index);
   };
 
   const handleAddSong = () => {
@@ -77,13 +57,15 @@ const EditPlaylistModal = ({ playlist, onClose }) => {
 
   const handleSave = async () => {
     try {
-      await playlistsAPI.update(playlist._id, {
+      // Update the current playlist in store
+      const updatedPlaylist = {
+        ...playlist,
         name,
-        songs: songs.map((s) => ({
-          song: s.song._id || s.song,
-          order: s.order,
-        })),
-      });
+        songs: songs.map((s) => s.song._id || s.song),
+      };
+
+      store.currentList = updatedPlaylist;
+      await store.updateCurrentList();
       onClose();
     } catch (error) {
       console.error("Error updating playlist:", error);
