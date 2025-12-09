@@ -11,7 +11,7 @@ const SongSchema = new Schema(
       type: String,
       required: true,
     },
-    youTubeId: {
+    youtubeId: {
       type: String,
       required: true,
     },

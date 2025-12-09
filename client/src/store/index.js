@@ -200,6 +200,11 @@ function GlobalStoreContextProvider(props) {
   store.loadIdNamePairs = async function () {
     try {
       const response = await api.getPlaylists(store.searchCriteria);
+      console.log(
+        "pairsArray =",
+        response.data.playlists,
+        Array.isArray(response.data.playlists)
+      ); // 👈 ADD THIS
       if (response.data.success) {
         let pairsArray = response.data.playlists;
         storeReducer({
@@ -396,7 +401,7 @@ function GlobalStoreContextProvider(props) {
       if (response.data.success) {
         storeReducer({
           type: GlobalStoreActionType.LOAD_SONGS,
-          payload: response.data.songs,
+          payload: response.data.songs || [],
         });
       }
     } catch (err) {
@@ -410,7 +415,7 @@ function GlobalStoreContextProvider(props) {
       if (response.data.success) {
         storeReducer({
           type: GlobalStoreActionType.LOAD_SONGS,
-          payload: response.data.songs,
+          payload: response.data.songs || [],
         });
       }
     } catch (err) {

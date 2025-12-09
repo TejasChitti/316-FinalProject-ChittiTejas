@@ -206,21 +206,21 @@ const SongsScreen = () => {
               <option value="year-asc">Year (Lo-Hi)</option>
             </select>
           </div>
-          <div className="results-count">{songs.length} Songs</div>
+          <div className="results-count">{store.songs.length} Songs</div>
         </div>
 
         {loading ? (
           <div className="loading">Loading songs...</div>
-        ) : songs.length === 0 ? (
+        ) : store.songs.length === 0 ? (
           <div className="empty-state">
             <div className="empty-state-icon">🎵</div>
             <div className="empty-state-text">No songs found</div>
           </div>
         ) : (
           <div className="playlist-list">
-            {songs.map((song) => {
+            {store.songs.map((song) => {
               const isOwned =
-                auth.loggedIn && song.addedBy._id === auth.user?.id;
+                auth.canEdit() && song.addedBy === auth.user?.email;
               return (
                 <div
                   key={song._id}
@@ -233,10 +233,12 @@ const SongsScreen = () => {
                     </div>
                     <div className="song-stats">
                       <span>Listens: {song.listens}</span>
-                      <span>Playlists: {song.playlistCount}</span>
+                      <span>
+                        Playlists: {song.usedInPlaylists?.length || 0}
+                      </span>
                     </div>
                   </div>
-                  {auth.loggedIn && (
+                  {auth.canEdit() && (
                     <div className="song-menu">
                       <button
                         className="menu-button"
@@ -249,14 +251,14 @@ const SongsScreen = () => {
                       </button>
                       {openMenu === song._id && (
                         <div className="menu-dropdown">
-                          {playlists.length > 0 && (
+                          {store.idNamePairs.length > 0 && (
                             <div
                               className="menu-item"
                               style={{ position: "relative" }}
                             >
                               Add to Playlist ▶
                               <div className="submenu">
-                                {playlists.map((playlist) => (
+                                {store.idNamePairs.map((playlist) => (
                                   <div
                                     key={playlist._id}
                                     className="menu-item"

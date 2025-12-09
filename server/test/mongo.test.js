@@ -6,301 +6,219 @@ import {
   expect,
   test,
 } from "vitest";
-const dotenv = require("dotenv").config({ path: __dirname + "/.env" });
-const mongoose = require("mongoose");
+import dotenv from "dotenv";
+import mongoose from "mongoose";
+import User from "../models/user-model.js";
+import Playlist from "../models/playlist-model.js";
+import Song from "../models/song-model.js";
+import bcrypt from "bcryptjs";
 
-const { dbManager, connection } = require("../db");
+dotenv.config();
 
-/**
- * Vitest test script for the Playlister app's Mongo Database Manager. Testing should verify that the Mongo Database Manager
- * will perform all necessarily operations properly.
- *
- * Scenarios we will test:
- *  1) Reading a User from the database
- *  2) Creating a User in the database
- *  3) ...
- *
- * You should add at least one test for each database interaction. In the real world of course we would do many varied
- * tests for each interaction.
- */
+const BASE_URL = "http://localhost:4000";
 
-/**
- * Executed once before all tests are performed.
- */
+async function apiRequest(method, endpoint, body = null, cookie = null) {
+  const options = {
+    method,
+    headers: {
+      "Content-Type": "application/json",
+    },
+  };
+
+  if (cookie) {
+    options.headers["Cookie"] = cookie;
+  }
+
+  if (body) {
+    options.body = JSON.stringify(body);
+  }
+
+  const response = await fetch(`${BASE_URL}${endpoint}`, options);
+  const data = await response.json();
+
+  return {
+    status: response.status,
+    data,
+    cookies: response.headers.get("set-cookie") || "",
+  };
+}
+
 beforeAll(async () => {
-  // SETUP THE CONNECTION VIA MONGOOSE JUST ONCE - IT IS IMPORTANT TO NOTE THAT INSTEAD
-  // OF DOING THIS HERE, IT SHOULD BE DONE INSIDE YOUR Database Manager (WHICHEVER)
-  await connection;
-
-  await dbManager.clearCollection("playlists");
-  await dbManager.clearCollection("users");
+  await mongoose.connect(
+    process.env.DB_CONNECT || "mongodb://localhost:27017/playlister-test"
+  );
+  console.log("✅ Test database connected");
 });
 
-/**
- * Executed before each test is performed.
- */
 beforeEach(async () => {
-  await dbManager.clearCollection("playlists");
-  await dbManager.clearCollection("users");
+  await User.deleteMany({});
+  await Playlist.deleteMany({});
+  await Song.deleteMany({});
 });
 
-/**
- * Executed after each test is performed.
- */
 afterEach(() => {});
 
-/**
- * Executed once after all tests are performed.
- */
-afterAll(() => {});
+afterAll(async () => {
+  await mongoose.connection.close();
+  console.log("✅ Test database closed");
+});
 
-/**
- * Vitest test to see if the Database Manager can get a User.
- */
-test("Test #1) Reading a User from the Database", async () => {
-  // FILL IN A USER WITH THE DATA YOU EXPECT THEM TO HAVE
-  const expectedUser = {
-    // FILL IN EXPECTED DATA
+test("Test #1) User Registration via API", async () => {
+  const testUser = {
     firstName: "Jane",
     lastName: "Doe",
     email: "jane@doe.com",
-    passwordHash: "aaaaaaaa",
+    password: "password123",
+    passwordVerify: "password123",
+    avatar: "",
   };
 
-  await dbManager.createUser(expectedUser);
+  const result = await apiRequest("POST", "/auth/register", testUser);
 
-  // THIS WILL STORE THE DATA RETRUNED BY A READ USER
+  expect(result.status).toBe(200);
+  expect(result.data.success).toBe(true);
+  expect(result.data.user.email).toBe("jane@doe.com");
+  expect(result.data.user.firstName).toBe("Jane");
+  expect(result.data.user.lastName).toBe("Doe");
+  expect(result.cookies).not.toBe("");
 
-  // READ THE USER
-  const actualUser = await dbManager.findUserByEmail(expectedUser.email);
-
-  // COMPARE THE VALUES OF THE EXPECTED USER TO THE ACTUAL ONE
-  expect(expectedUser.firstName, actualUser.firstName);
-  expect(expectedUser.lastName, actualUser.lastName);
-  expect(expectedUser.email, actualUser.email);
-  expect(expectedUser.passwordHash, actualUser.passwordHash);
-  // AND SO ON
+  const userInDb = await User.findOne({ email: "jane@doe.com" });
+  expect(userInDb).not.toBeNull();
+  expect(userInDb.firstName).toBe("Jane");
+  expect(userInDb.lastName).toBe("Doe");
 });
 
-/**
- * Vitest test to see if the Database Manager can create a User
- */
-test("Test #2) Creating a User in the Database", async () => {
-  // MAKE A TEST USER TO CREATE IN THE DATABASE
+test("Test #2) Creating a Playlist via Authenticated API Request", async () => {
   const testUser = {
-    // FILL IN TEST DATA, INCLUDE AN ID SO YOU CAN GET IT LATER
     firstName: "Joe",
     lastName: "Shmo",
     email: "joe@shmo.com",
-    passwordHash: "aaaaaaaa",
+    password: "password123",
+    passwordVerify: "password123",
+    avatar: "",
   };
 
-  // CREATE THE USER
-  // dbManager.somethingOrOtherToCreateAUser(...)
-  const createdUser = await dbManager.createUser(testUser);
+  const registerResult = await apiRequest("POST", "/auth/register", testUser);
+  const authCookie = registerResult.cookies;
 
-  // NEXT TEST TO SEE IF IT WAS PROPERLY CREATED
-
-  // FILL IN A USER WITH THE DATA YOU EXPECT THEM TO HAVE
-  const expectedUser = {
-    // FILL IN EXPECTED DATA
-    firstName: "Joe",
-    lastName: "Shmo",
-    email: "joe@shmo.com",
-    passwordHash: "aaaaaaaa",
+  const playlistData = {
+    name: "My Test Playlist",
   };
 
-  // THIS WILL STORE THE DATA RETRUNED BY A READ USER
-  const actualUser = await dbManager.findUserById(createdUser._id);
-
-  // READ THE USER
-  // actualUser = dbManager.somethingOrOtherToGetAUser(...)
-
-  // COMPARE THE VALUES OF THE EXPECTED USER TO THE ACTUAL ONE
-  expect(expectedUser.firstName, actualUser.firstName);
-  expect(expectedUser.lastName, actualUser.lastName);
-  expect(expectedUser.email, actualUser.email);
-  expect(expectedUser.passwordHash, actualUser.passwordHash);
-  // AND SO ON
-});
-
-// THE REST OF YOUR TEST SHOULD BE PUT BELOW
-
-test("Test #3) Reading a User by ID from the Database", async () => {
-  const testUser = {
-    firstName: "Average",
-    lastName: "Joe",
-    email: "average@joecom",
-    passwordHash: "aaaaaaaa",
-  };
-
-  const createdUser = await dbManager.createUser(testUser);
-  const actualUser = await dbManager.findUserById(createdUser._id);
-
-  expect(testUser.firstName, actualUser.firstName);
-  expect(testUser.lastName, actualUser.lastName);
-  expect(testUser._id, actualUser._id);
-});
-
-test("Test #4) Creating a playlist", async () => {
-  const testPlaylist = {
-    name: "Test Playlist",
-    ownerEmail: "average@joecom",
-    songs: [],
-  };
-
-  const createdPlaylist = await dbManager.createPlaylist(testPlaylist);
-
-  const expectedPlaylist = {
-    name: "Test Playlist",
-    ownerEmail: "average@joecom",
-    songs: [],
-  };
-
-  expect(expectedPlaylist.firstName, createdPlaylist.firstName);
-  expect(expectedPlaylist.lastName, createdPlaylist.lastName);
-  expect(expectedPlaylist._id, createdPlaylist._id);
-});
-
-test("Test #5) Adding a playlist to user", async () => {
-  const testUser = {
-    firstName: "Average",
-    lastName: "Joe",
-    email: "average@joecom",
-    passwordHash: "aaaaaaaa",
-  };
-
-  const createdUser = await dbManager.createUser(testUser);
-
-  const testPlaylist = {
-    name: "Test Playlist",
-    ownerEmail: "average@joecom",
-    songs: [],
-  };
-
-  const createdPlaylist = await dbManager.createPlaylist(testPlaylist);
-
-  const updatedUser = await dbManager.addPlaylistToUser(
-    createdUser._id,
-    createdPlaylist._id
+  const result = await apiRequest(
+    "POST",
+    "/api/playlists",
+    playlistData,
+    authCookie
   );
 
-  expect(updatedUser.playlists).toBeDefined();
-  expect(updatedUser.playlists.length).toBeGreaterThan(0);
+  expect(result.status).toBe(201);
+  expect(result.data.success).toBe(true);
+  expect(result.data.data.name).toBe("My Test Playlist");
+  expect(result.data.data.ownerEmail).toBe("joe@shmo.com");
+  expect(result.data.data.ownerFirstName).toBe("Joe");
+  expect(result.data.data.ownerLastName).toBe("Shmo");
+
+  const playlistInDb = await Playlist.findOne({ name: "My Test Playlist" });
+  expect(playlistInDb).not.toBeNull();
+  expect(playlistInDb.ownerEmail).toBe("joe@shmo.com");
 });
 
-test("Test #6) Reading a playlist by ID", async () => {
-  const testPlaylist = {
-    name: "Back In my Day",
-    ownerEmail: "average@joe.com",
-    songs: [],
+test("Test #3) Creating a Song via Authenticated API Request", async () => {
+  const testUser = {
+    firstName: "Average",
+    lastName: "Joe",
+    email: "average@joe.com",
+    password: "password123",
+    passwordVerify: "password123",
+    avatar: "",
   };
 
-  const createdPlaylist = await dbManager.createPlaylist(testPlaylist);
-  const readPlaylist = await dbManager.findPlaylistById(createdPlaylist._id);
+  const registerResult = await apiRequest("POST", "/auth/register", testUser);
+  const authCookie = registerResult.cookies;
 
-  expect(testPlaylist.name, readPlaylist.name);
-  expect(testPlaylist._id, readPlaylist._id);
-});
-
-test("Test #7) Reading a playlists by owner email", async () => {
-  const ownerEmail = "average@joe.com";
-
-  await dbManager.createPlaylist({ name: "Playlist 1", ownerEmail, songs: [] });
-  await dbManager.createPlaylist({ name: "Playlist 2", ownerEmail, songs: [] });
-
-  const playlists = await dbManager.findPlaylistsByOwnerEmail(ownerEmail);
-
-  expect(2, playlists.length);
-  expect(ownerEmail, playlists[0].ownerEmail);
-});
-
-test("Test #8) Reading all playlists", async () => {
-  await dbManager.createPlaylist({
-    name: "On Repeat",
-    ownerEmail: "average@joe.com",
-    songs: [],
-  });
-  await dbManager.createPlaylist({
-    name: "Back In My Day",
-    ownerEmail: "jane@doe.com",
-    songs: [],
-  });
-
-  const allPlaylists = await dbManager.findAllPlaylists();
-
-  expect(allPlaylists.length).toBeGreaterThanOrEqual(2);
-});
-
-test("Test #9) Updating a playlist", async () => {
-  const testPlaylist = {
-    name: "New Discoveries",
-    ownerEmail: "average@joe.com",
-    songs: [],
+  const songData = {
+    title: "Bohemian Rhapsody",
+    artist: "Queen",
+    youTubeId: "fJ9rUzIMcZQ",
+    year: 1975,
   };
 
-  const createdPlaylist = await dbManager.createPlaylist(testPlaylist);
-  const updatedPlaylist = await dbManager.updatePlaylist(createdPlaylist._id, {
-    name: "Interesting songs",
-    songs: [
-      { title: "Song 1", artist: "Artist", year: 2025, youTubeId: "arbefe" },
-    ],
-  });
+  const result = await apiRequest("POST", "/api/songs", songData, authCookie);
 
-  expect("Interesting songs", updatedPlaylist.name);
-  expect(1, updatedPlaylist.songs.length);
+  expect(result.status).toBe(201);
+  expect(result.data.success).toBe(true);
+  expect(result.data.data.title).toBe("Bohemian Rhapsody");
+  expect(result.data.data.artist).toBe("Queen");
+  expect(result.data.data.year).toBe(1975);
+  expect(result.data.data.addedBy).toBe("average@joe.com");
+
+  const songInDb = await Song.findOne({ title: "Bohemian Rhapsody" });
+  expect(songInDb).not.toBeNull();
+  expect(songInDb.artist).toBe("Queen");
+  expect(songInDb.addedBy).toBe("average@joe.com");
 });
 
-test("Test #10) Deleting a playlist", async () => {
-  const testPlaylist = {
-    name: "deleted playlist",
-    ownerEmail: "jane@doe.com",
+test("Test #4) Reading All Playlists via Public API", async () => {
+  const user1 = await User.create({
+    firstName: "User",
+    lastName: "One",
+    email: "user1@test.com",
+    passwordHash: await bcrypt.hash("password123", 10),
+  });
+
+  const user2 = await User.create({
+    firstName: "User",
+    lastName: "Two",
+    email: "user2@test.com",
+    passwordHash: await bcrypt.hash("password123", 10),
+  });
+
+  await Playlist.create({
+    name: "Rock Playlist",
+    ownerEmail: user1.email,
+    ownerFirstName: user1.firstName,
+    ownerLastName: user1.lastName,
+    ownerAvatar: "",
     songs: [],
+    published: true,
+  });
+
+  await Playlist.create({
+    name: "Jazz Playlist",
+    ownerEmail: user2.email,
+    ownerFirstName: user2.firstName,
+    ownerLastName: user2.lastName,
+    ownerAvatar: "",
+    songs: [],
+    published: true,
+  });
+
+  const result = await apiRequest("GET", "/api/playlists");
+
+  expect(result.status).toBe(200);
+  expect(result.data.success).toBe(true);
+  expect(Array.isArray(result.data.data)).toBe(true);
+  expect(result.data.data.length).toBe(2);
+
+  const playlistNames = result.data.data.map((p) => p.name);
+  expect(playlistNames).toContain("Rock Playlist");
+  expect(playlistNames).toContain("Jazz Playlist");
+});
+
+test("Test #5) Preventing Unauthorized Playlist Creation", async () => {
+  const playlistData = {
+    name: "Unauthorized Playlist",
   };
 
-  const createdPlaylist = await dbManager.createPlaylist(testPlaylist);
-  const result = await dbManager.deletePlaylist(createdPlaylist._id);
+  const result = await apiRequest("POST", "/api/playlists", playlistData);
 
-  expect(true, result);
+  expect(result.status).toBe(401);
+  expect(result.data.success).toBe(false);
+  expect(result.data.errorMessage).toBe("Unauthorized");
 
-  const deletedPlaylist = await dbManager.findPlaylistById(createdPlaylist._id);
-  expect(deletedPlaylist).toBeNull();
-});
-
-test("Test #11) Clearing a collection", async () => {
-  await dbManager.createUser({
-    firstName: "Jane",
-    lastName: "Doe",
-    email: "jane@doe.com",
-    passwordHash: "aaaaaaaa",
+  const playlistInDb = await Playlist.findOne({
+    name: "Unauthorized Playlist",
   });
-  await dbManager.clearCollection("users");
-
-  const user = await dbManager.findUserByEmail("jane@doe.com");
-  expect(user).toBeNull();
-});
-
-test("Test #12) Inserting many collections", async () => {
-  const usersData = [
-    {
-      firstName: "Jane",
-      lastName: "Doe",
-      email: "jane@doe.com",
-      passwordHash: "aaaaaaa",
-    },
-    {
-      firstName: "Joe",
-      lastName: "Shmo",
-      email: "joe@shmo.com",
-      passwordHash: "aaaaaaaa",
-    },
-  ];
-
-  await dbManager.insertMany("users", usersData);
-
-  const user1 = await dbManager.findUserByEmail("jane@doe.com");
-  const user2 = await dbManager.findUserByEmail("joe@shmo.com");
-
-  expect("Jane", user1.firstName);
-  expect("Joe", user2.firstName);
+  expect(playlistInDb).toBeNull();
 });

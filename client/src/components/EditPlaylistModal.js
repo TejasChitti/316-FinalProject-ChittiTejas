@@ -94,7 +94,10 @@ const EditPlaylistModal = ({ playlist, onClose }) => {
               placeholder="Playlist Name"
             />
             <button className="add-song-button" onClick={handleAddSong}>
-              ➕
+              <img
+                src="musicnote.png
+              "
+              />
             </button>
           </div>
 

@@ -5,7 +5,6 @@ const api = axios.create({
   baseURL: "http://localhost:4000",
 });
 
-// Auth requests
 export const registerUser = (userData) => {
   return api.post("/auth/register", userData);
 };
@@ -51,7 +50,6 @@ export const playPlaylist = (id) => {
   return api.post(`/api/playlists/${id}/play`);
 };
 
-// Song requests
 export const getSongs = (params) => {
   return api.get("/api/songs", { params });
 };

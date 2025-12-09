@@ -235,7 +235,7 @@ body {
 }
 
 .btn-danger {
-  background: #dc3545;
+  background: black;
   color: white;
 }
 
@@ -686,23 +686,23 @@ body {
 }
 
 .modal {
-  background: white;
-  border-radius: 10px;
+  background: #b0ffb5;
   padding: 30px;
-  max-width: 600px;
+  max-width: 500px;
   width: 90%;
-  max-height: 80vh;
+  height: 50%;
+  max-height: 90vh;
   overflow-y: auto;
   box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
 }
 
 .modal-header {
-  background: #28a745;
+  background: #0e8503;
   color: white;
   padding: 15px 20px;
   margin: -30px -30px 20px -30px;
   border-radius: 10px 10px 0 0;
-  font-size: 20px;
+  font-size: 30px;
   font-weight: bold;
 }
 
@@ -726,7 +726,7 @@ body {
   display: flex;
   gap: 10px;
   justify-content: flex-end;
-  margin-top: 20px;
+  margin-top: 100px;
 }
 
 .playlist-name-input {
@@ -787,7 +787,6 @@ body {
   display: flex;
   align-items: center;
   gap: 8px;
-  margin-top: 15px;
 }
 
 .add-song-button:hover {
@@ -846,12 +845,12 @@ body {
 }
 
 .confirm-text {
-  font-size: 18px;
+  font-size: 20px;
   margin-bottom: 10px;
 }
 
 .confirm-subtext {
-  font-size: 14px;
+  font-size: 15px;
   color: #666;
   margin-bottom: 20px;
 }

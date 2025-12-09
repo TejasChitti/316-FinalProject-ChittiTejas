@@ -4,17 +4,33 @@ const auth = require("../auth");
 
 const createPlaylist = async (req, res) => {
   try {
-    const userId = auth.verifyUser(req);
-    if (!userId) {
-      return res.status(401).json({ success: false, error: "Unauthorized" });
+    // auth.verify middleware already ran and set these
+    const userId = req.userId;
+    const userEmail = req.userEmail;
+
+    console.log("📋 Creating playlist...");
+    console.log("User ID:", userId);
+    console.log("User Email:", userEmail);
+
+    // Verify we have the required data from middleware
+    if (!userId || !userEmail) {
+      return res.status(401).json({
+        success: false,
+        error: "Unauthorized - missing user data",
+      });
     }
 
     const { name, songs } = req.body;
-    const userEmail = req.userEmail;
 
-    // Get user info from token
+    // Get user info from database
     const User = require("../models/user-model");
     const user = await User.findById(userId);
+
+    if (!user) {
+      return res.status(404).json({ success: false, error: "User not found" });
+    }
+
+    console.log("✅ User found:", user.email);
 
     // Generate unique "Untitled X" name if not provided
     let playlistName = name;
@@ -22,7 +38,6 @@ const createPlaylist = async (req, res) => {
       let counter = 0;
       playlistName = `Untitled${counter}`;
 
-      // Find all user's playlists that start with "Untitled"
       const existingPlaylists = await Playlist.find({
         ownerEmail: userEmail,
         name: new RegExp("^Untitled"),
@@ -45,20 +60,20 @@ const createPlaylist = async (req, res) => {
       ownerFirstName: user.firstName,
       ownerLastName: user.lastName,
       ownerAvatar: user.avatar,
-      songs: songs || [],
+      songs: [],
       listeners: [],
       plays: 0,
       published: true,
     });
 
     const savedPlaylist = await newPlaylist.save();
+
     const populatedPlaylist = await Playlist.findById(
       savedPlaylist._id
     ).populate("songs");
 
-    res.status(201).json({ success: true, data: populatedPlaylist });
+    res.status(201).json({ success: true, playlist: populatedPlaylist });
   } catch (err) {
-    console.error(err);
     res.status(500).json({ success: false, error: err.message });
   }
 };
@@ -109,7 +124,7 @@ const getPlaylists = async (req, res) => {
       playlists = sortPlaylists(playlists, sortBy, sortOrder);
     }
 
-    res.status(200).json({ success: true, data: playlists });
+    res.status(200).json({ success: true, playlists });
   } catch (err) {
     console.error(err);
     res.status(500).json({ success: false, error: err.message });

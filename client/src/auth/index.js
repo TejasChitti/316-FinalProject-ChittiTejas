@@ -49,7 +49,6 @@ function AuthContextProvider(props) {
           isGuest: false,
           errorMessage: null,
         });
-        // Redirect to login after successful registration
         navigate("/login");
       }
     } catch (err) {

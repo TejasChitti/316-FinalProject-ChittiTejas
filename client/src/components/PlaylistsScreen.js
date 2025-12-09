@@ -195,46 +195,47 @@ const PlaylistsScreen = () => {
               <option value="userName-desc">User Name (Z-A)</option>
             </select>
           </div>
-          <div className="results-count">{playlists.length} Playlists</div>
+          <div className="results-count">
+            {store.idNamePairs.length} Playlists
+          </div>
         </div>
 
         {loading ? (
           <div className="loading">Loading playlists...</div>
-        ) : playlists.length === 0 ? (
+        ) : store.idNamePairs.length === 0 ? (
           <div className="empty-state">
             <div className="empty-state-icon">🎵</div>
             <div className="empty-state-text">No playlists found</div>
           </div>
         ) : (
           <div className="playlist-list">
-            {playlists.map((playlist) => (
+            {store.idNamePairs.map((playlist) => (
               <div key={playlist._id} className="playlist-card">
                 <img
-                  src={playlist.owner.avatarImage}
-                  alt={playlist.owner.userName}
+                  src={playlist.ownerAvatar || "/Avatar.png"}
+                  alt={playlist.ownerFirstName}
                   className="playlist-avatar"
                 />
                 <div className="playlist-info">
                   <div className="playlist-name">{playlist.name}</div>
                   <div className="playlist-owner">
-                    {playlist.owner.userName}
+                    {playlist.ownerFirstName} {playlist.ownerLastName}
                   </div>
                   <div className="playlist-listeners">
-                    {playlist.listenerCount} Listeners
+                    {playlist.listeners?.length || 0} Listeners
                   </div>
                   {playlist.songs.length > 0 && (
                     <div className="playlist-songs-preview">
                       {playlist.songs.slice(0, 3).map((s, i) => (
                         <div key={i}>
-                          {i + 1}. {s.song?.title} by {s.song?.artist} (
-                          {s.song?.year})
+                          {i + 1}. {s.title} by {s.artist} ({s.year})
                         </div>
                       ))}
                     </div>
                   )}
                 </div>
                 <div className="playlist-actions">
-                  {auth.loggedIn && auth.isOwner(playlist.ownerEmail) && (
+                  {auth.canEdit() && auth.isOwner(playlist.ownerEmail) && (
                     <>
                       <button
                         className="action-btn btn-edit"
@@ -250,7 +251,7 @@ const PlaylistsScreen = () => {
                       </button>
                     </>
                   )}
-                  {auth.canEdit() && playlist.owner._id !== auth.user?.id && (
+                  {auth.canEdit() && !auth.isOwner(playlist.ownerEmail) && (
                     <button
                       className="action-btn btn-copy"
                       onClick={() => handleCopy(playlist)}
@@ -269,11 +270,11 @@ const PlaylistsScreen = () => {
             ))}
           </div>
         )}
-        {
+        {auth.canEdit() && (
           <button className="new-playlist-btn" onClick={handleCreatePlaylist}>
             ➕ New Playlist
           </button>
-        }
+        )}
       </div>
 
       {editingPlaylist && (
